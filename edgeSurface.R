@@ -6,6 +6,7 @@ Sys.setenv("PROJ_LIB"=prj)
 #The following libraries are needed to run this script.
 
 library(sf)
+library(stars)
 library(terra)
 library(lwgeom)
 library(raster)
