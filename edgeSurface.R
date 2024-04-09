@@ -1,7 +1,9 @@
-#The following libraries are needed to run thi script.
+
+
+#The following libraries are needed to run this script.
+
 library(sf)
 library(terra)
-library(stars)
 library(lwgeom)
 library(raster)
 library(gdistance)
@@ -72,15 +74,16 @@ coercedLogistic <- function(x, fullEdgeEffectArea) {
 }
 
 
-#load in the land-cover raster data
+#load in the land-cover raster data using stars 
 
-lcm<-rast("C:/SE/lcmSouthPennines.tif")
-
+lcm<-read_stars("lcmSouthPennines.tif")
+#convert to spatRaster
+lcm<-rast(lcm)
 #inspect
 plot(lcm)
 
 #load in polygons for the layer
-lcmPoly<-st_read("C:/SE/lcmVector.shp")
+lcmPoly<-st_read("lcmVector.shp")
 
 #View first few cases
 head(lcmPoly)
@@ -158,8 +161,8 @@ lcmPoly$Area<-as.numeric(st_area(lcmPoly))
   #create a separate object for the "habitat" class (woodland) 
   habPatch<-lcmPoly[lcmPoly$habNumber==1,]  
   
-  #not ideal but let's keep things manageable by only focussing on woodland patches over 10000
-  habPatch<-habPatch[habPatch$Area>=10000,]
+  #not ideal but let's keep things manageable by only focussing on woodland patches over 10 hectares
+  habPatch<-habPatch[habPatch$Area>=100000,]
   
   #this function will create the edge surfaces for all land-use types and collect them in a list 
   funEdge<-function(x){
@@ -323,15 +326,16 @@ lcmPoly$Area<-as.numeric(st_area(lcmPoly))
     ###########################################Least Cost Path calculations##############################
     
     # convert matrix patches to cost raster (costs in col 5)
-    costRast<-st_rasterize(lcmPoly[,5])
-    costRast<-rast(costRast)
-    #plot(costRast)
+    costRast<-rasterize(lcmPoly,lcm,field="cost")
+    
+    
     #set habitat patches (NA in the data to 1)
     costRast[is.na(costRast)]<-1
     
+    print("calculating transition layer, please wait")
     # gdistance takes raster package objects so convert 
     land_cost <- transition(raster(costRast), transitionFunction=function(x) 1 / mean(x), 8)
-    
+    print("transition layer done")
     # set destination points as centroids of the patches
     sites <- SpatialPoints(st_coordinates(st_point_on_surface(st_as_sf(extClump))))
     
@@ -347,11 +351,11 @@ lcmPoly$Area<-as.numeric(st_area(lcmPoly))
     # this is a matrix of least cost distances between patches 
     
     #create basis for probability matrix
-    distMat<-as.matrix(costMat, nrow=nrow(habPat), nrow=nrow(habPat)) 
+    distMat<-as.matrix(costMat, nrow=nrow(patches), nrow=nrow(patches)) 
     distMat <- apply(distMat, MARGIN=1, FUN=as.numeric) # make sure all elements are numeric here
     
     # set alpha which determines colonization probability of the species 
-    alpha= -log(0.05) / 10000
+    alpha= -log(dispersalRate) / 10000
     
     # init empty matrix for adjacency matrix 
     A.prob <- matrix(0, nrow=nrow(distMat), ncol=ncol(distMat))
@@ -377,7 +381,7 @@ lcmPoly$Area<-as.numeric(st_area(lcmPoly))
     pstar.mat <- exp(-pstar.mat)                                                   
     
     # get study area in m2
-    AL <- sum(expanse(matrix))
+    AL <- ncell(matrix)*cellArea
     
     # get area vector 
     area <- extClump$areaMod
@@ -397,7 +401,7 @@ lcmPoly$Area<-as.numeric(st_area(lcmPoly))
       # compile results into list and return
     
     return(EHI)
-    
+    print("EHI done")
   } # -- EHI
   
   
