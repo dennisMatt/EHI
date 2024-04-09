@@ -55,7 +55,7 @@ logistic <- function(x, L=1.0, k, x0) {
 #   `fullEdgeEffectArea` is the x value that should be coerced to 1  
 
 # 
-###Finally, this function coerces the reults of the 'logistic' function uing the 'lerp' function above
+###Finally, this function coerces the reults of the 'logistic' function using the 'lerp' function above
 coercedLogistic <- function(x, fullEdgeEffectArea) {
   
   # if outside of the parameter range, just return accordingly
@@ -402,7 +402,7 @@ lcmPoly$Area<-as.numeric(st_area(lcmPoly))
     # divide by total area of the study squared to get the PC metric  
     EHI <- sqrt(pcMatSum) / as.numeric(AL) 
     
-      # compile results into list and return
+      # return EHI value
     
     return(EHI)
     print("EHI done")
