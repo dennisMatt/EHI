@@ -1,4 +1,7 @@
-
+#Code to tell R to only use the terra installation of PROJ (for performing projections)
+plib<-Sys.getenv("PROJ_LIB")
+prj<-system.file("proj",package="terra")[1]
+Sys.setenv("PROJ_LIB"=prj)
 
 #The following libraries are needed to run this script.
 
